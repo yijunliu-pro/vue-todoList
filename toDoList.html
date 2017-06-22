@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>to do list</title>
+	<style>
+	.isSelect{font-weight: bold;text-decoration: underline;}
+	
+	</style>
+</head>
+<body>
+<div class="wrapper">
+	<h1 v-bind:title="message">{{title}}</h1>
+	<input type="text" v-model="inputtxt" v-on:keyup.enter="addList">
+	<ul>
+		<li v-for="item in items" v-bind:class="{isSelect:item.isSelect}" v-on:click="select(item)">
+			{{item.name}}
+		</li>
+	</ul>
+	<my-component></my-component>
+	<child-component :message="inputtxt" :img-src="src"></child-component>
+</div>
+	
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script type="text/javascript">
+var storageItem;
+var storage = {
+	fetch: function(){
+		//输出后转化为对象，若获取不到就为空，适用于第一次打开页面
+		return JSON.parse(localStorage.getItem(storageItem)||[]); 
+	},
+	save: function(items){
+		//存入只能是字符串，想存入数组或者对象需要先转化
+		var itemStr = JSON.stringify(items);
+		localStorage.setItem(storageItem,JSON.stringify(items));
+	}
+}
+
+// 第一种-注册全局组件
+Vue.component('my-component', {
+  	template: '<div>show-child-message</div>',
+});
+
+//第二种-注册子组件
+var Child = { 
+	//注：当使用的不是字符串模板时，如果驼峰式名的prop在html中需要转化为对应的kebab-case命名
+	template: '<img v-bind:src="imgSrc" v-bind:title="message"/>', 
+	props:["imgSrc","message"] //props用于接受父组件的数据
+};
+
+new Vue({
+	el: ".wrapper",
+	data: {
+		title:"to do list",
+		inputtxt:'',
+		src:"https://puui.qpic.cn/vcover_hz_pic/0/5a3aweewodeclku1497247231/332",
+		items: storage.fetch(), //先获取本地存储的内容
+		message: '页面加载于 ' + new Date()
+	},
+	methods: {
+		select: function(item){
+			item.isSelect = !item.isSelect; //反转
+		},
+		addList: function(argument) {
+			this.items.push({
+				name:this.inputtxt,
+				isSelect:false
+			});
+			this.inputtxt = '';
+		}	
+	},
+	watch: { //监测-值发生改变时对应的回调函数
+		items:{
+			handler: function(items){
+				var storageItem;
+				storage.save(items);
+			},
+			deep: true //为true回调函数里的才会生效
+		}
+	},
+	components: {// 注册组件
+		'child-component': Child
+	}
+
+});
+</script>	
+</body>
+</html>
+
